@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 
 const products = require('../controllers/products');
+const { validerProduct } = require('../middlewares/validators/product');
+const validate = require('../middlewares/validate');
 
-// 🔥 debug
-console.log('DEBUG products =', products);
+router.get('/', products.getAll);
+router.get('/:id', products.getById);
 
-router.get('/', (req, res, next) => products.getAll(req, res, next));
-router.post('/', (req, res, next) => products.create(req, res, next));
+router.post('/', validerProduct, validate, products.create);
+router.put('/:id', products.update);
+router.delete('/:id', products.remove);
 
 module.exports = router;

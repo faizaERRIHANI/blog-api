@@ -1,4 +1,4 @@
-const { Product, Category } = require('../models');
+const { Product, Category, OrderItem } = require('../models');
 const { Op } = require('sequelize');
 
 // GET /products
@@ -8,9 +8,7 @@ async function getAll(req, res, next) {
 
     const where = {};
 
-    if (category) {
-      where.categoryId = category;
-    }
+    if (category) where.categoryId = category;
 
     if (minPrice || maxPrice) {
       where.prix = {};
@@ -23,18 +21,30 @@ async function getAll(req, res, next) {
 
     const products = await Product.findAll({
       where,
-      include: [
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['nom']
-        }
-      ],
+      include: [{ model: Category, as: 'category', attributes: ['nom'] }],
       limit,
       offset
     });
 
     res.json(products);
+
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /products/:id
+async function getById(req, res, next) {
+  try {
+    const product = await Product.findByPk(req.params.id, {
+      include: [{ model: Category, as: 'category', attributes: ['nom'] }]
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Produit introuvable' });
+    }
+
+    res.json(product);
 
   } catch (err) {
     next(err);
@@ -51,8 +61,46 @@ async function create(req, res, next) {
   }
 }
 
-// 🔥 TRÈS IMPORTANT (c’est ça le problème)
-module.exports = {
-  getAll,
-  create
-};
+// PUT /products/:id
+async function update(req, res, next) {
+  try {
+    const product = await Product.findByPk(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Produit introuvable' });
+    }
+
+    await product.update(req.body);
+
+    res.json(product);
+
+  } catch (err) {
+    next(err);
+  }
+}
+
+// DELETE /products/:id
+async function remove(req, res, next) {
+  try {
+    const count = await OrderItem.count({
+      where: { productId: req.params.id }
+    });
+
+    if (count > 0) {
+      return res.status(409).json({
+        message: 'Produit utilisé dans une commande'
+      });
+    }
+
+    await Product.destroy({
+      where: { id: req.params.id }
+    });
+
+    res.sendStatus(204);
+
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getAll, getById, create, update, remove };

@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+const { Sequelize } = require('sequelize'); // ✅ IMPORTANT
 require('dotenv').config();
 
 const sequelize = new Sequelize(
@@ -9,7 +9,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'mysql',
-    logging: false
+    logging: false // désactive logs SQL
   }
 );
 
